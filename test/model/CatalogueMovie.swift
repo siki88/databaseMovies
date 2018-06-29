@@ -26,8 +26,8 @@ class CatalogueMovie {
     
     init?(json: [String:Any]){
         if let id = json["id"],
-            let title = json["title"],
-            let image = json["poster_path"]{
+            let title = json["title"]{
+            let image = json["poster_path"]
             
             self.id = id as! Int
             self.title = title as! String

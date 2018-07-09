@@ -74,19 +74,28 @@ class detailMovieViewController: UIViewController, MovieDetailListener{
     
     // MARK: REQUEST ON YOUTUBE ID
     func loadIDFormMovie(trailers: [Trailers]) {
-        if trailers[0].key == nil {
-            self.watchTrailer.isHidden = true
+        if trailers.count == 0 {
+            navigationController?.popViewController(animated: true)
         }else{
-            self.idYoutube = trailers[0].key    // FIRST ID !!!
+            if trailers[0].key == nil {
+                self.watchTrailer.isHidden = true
+            }else{
+                self.idYoutube = trailers[0].key    // FIRST ID !!!
+            }
         }
     }
     
     // MARK: MAIN EXTRACT
     func getMovieDetail(movie: Movie) {
-        alamofireImage(movieImage: movie.image!)
+        
+        if let image = movie.image {
+            alamofireImage(movieImage: image)
+        }
         self.movieTitle.text = movie.title
         self.movieGeneres.text = genresFunc(movieGenres: movie.genres)
-        self.movieDate.text =  convertDateFormater(movie.date!)
+        if let date = movie.date, date != "" {
+            self.movieDate.text =  convertDateFormater(date)
+        }
         self.movieOverview.text = movie.overview
     }
     

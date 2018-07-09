@@ -65,12 +65,10 @@ class mainController: UIViewController,UITableViewDelegate,UITableViewDataSource
     
     //MARK: REQUEST ALAMOFIRE
     func requestOnAlamofire(urlCategoryFilter:URL){
-        
-        print("URL před odesláním: \(urlCategoryFilter)")
-        
         Alamofire.request(urlCategoryFilter, method: .get, parameters: nil, encoding: JSONEncoding.default)
             .responseJSON { response in
                 if var catalogs = response.result.value as? [String:AnyObject]{
+                    //                    print("catalogs: \(catalogs)") : catalogs: ["status_message": Your request count (42) is over the allowed limit of 40., "status_code": 25]
                         for catalog in (catalogs["results"] as? [[String: AnyObject]])! {
                             if let parsenew = CatalogueMovie(json: catalog as [String : Any]){
                                 self.catalogueMovie.append(parsenew)
@@ -103,8 +101,8 @@ class mainController: UIViewController,UITableViewDelegate,UITableViewDataSource
         let cell = tableView.dequeueReusableCell(withIdentifier: "mainTableCell", for: indexPath) as! mainTableViewCell
         
         
-        if self.catalogueMovie[indexPath.row].title != "" {
-            cell.movieTitle.text = self.catalogueMovie[indexPath.row].title
+        if let title =  Optional(self.catalogueMovie[indexPath.row].title),self.catalogueMovie[indexPath.row].title != "" {
+            cell.movieTitle.text = title
         }else{
             cell.movieTitle.text = "N/A"
         }
@@ -150,7 +148,6 @@ class mainController: UIViewController,UITableViewDelegate,UITableViewDataSource
     }
     
     func beginBatchFetch(){
-        print("self.fetchongMore \(self.fetchongMore) AND self.page \(self.page )")
         self.fetchongMore = true
         
         var urlCategoryFilter:URL?
@@ -198,7 +195,6 @@ class mainController: UIViewController,UITableViewDelegate,UITableViewDataSource
             self.page = 2
             requestOnAlamofire(urlCategoryFilter:urlCategoryFilter!)
         }else{
-            print("!self.searchBar.text!.isEmpty else")
             self.catalogueMovie.removeAll()
             let urlCategoryFilter = URL(string: "https://api.themoviedb.org/3/movie/popular?api_key=\(self.api_key)&page=1&language=\(self.language)")
             requestOnAlamofire(urlCategoryFilter:urlCategoryFilter!)

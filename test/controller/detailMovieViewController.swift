@@ -14,6 +14,7 @@ class detailMovieViewController: UIViewController, MovieDetailListener{
   
     var idMovie:Int?
     var idYoutube:String?
+    var language:String = ""
     
     var activityIndicator:UIActivityIndicatorView = UIActivityIndicatorView()
     
@@ -44,8 +45,12 @@ class detailMovieViewController: UIViewController, MovieDetailListener{
         view.addSubview(activityIndicator)
         activityIndicator.startAnimating()
         
+        if let selectLanguage = UserDefaults.standard.object(forKey: "selectLanguage") as? String,UserDefaults.standard.object(forKey: "selectLanguage") as? String != "", selectLanguage != "" {
+            self.language = "&language=\(selectLanguage)"
+        }
+        
         if let idSingleMovie = self.idMovie, self.idMovie != nil {
-            API.getMovieDetail(idMovie: idSingleMovie, completionHandler: self)
+            API.getMovieDetail(selectLanguage: self.language,idMovie: idSingleMovie, completionHandler: self)
             API.loadIDFormMovie(idMovie: idSingleMovie, completionHandler: self)
         }
     }

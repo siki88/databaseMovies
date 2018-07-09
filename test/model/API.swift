@@ -11,22 +11,23 @@ import Alamofire
 class API {
     
     // MARK: LOAD ID MOVIE
-    static func getMovieDetail(idMovie:Int ,completionHandler: MovieDetailListener) {
+    static func getMovieDetail(selectLanguage: String,idMovie:Int ,completionHandler: MovieDetailListener) {
         if let api_key = UserDefaults.standard.object(forKey: "api_key") as? String {
-            let getURL =  URL(string:"https://api.themoviedb.org/3/movie/\(idMovie)?api_key=\(api_key)")
-            
-            Alamofire.request(getURL!, method: .get, parameters: nil, encoding: JSONEncoding.default)
-                .responseJSON { response in
-                    if let movies = response.result.value as? [String:AnyObject]{
-                        if let parsenew = Movie(json: movies ){
-                            completionHandler.getMovieDetail(movie: parsenew)
-                        }else{
-                            print("je to null!")
-                        }
 
-                    }
-                }
+                let getURL =  URL(string:"https://api.themoviedb.org/3/movie/\(idMovie)?api_key=\(api_key)\(selectLanguage)")
             
+                Alamofire.request(getURL!, method: .get, parameters: nil, encoding: JSONEncoding.default)
+                    .responseJSON { response in
+                        if let movies = response.result.value as? [String:AnyObject]{
+                            if let parsenew = Movie(json: movies ){
+                                completionHandler.getMovieDetail(movie: parsenew)
+                            }else{
+                                print("je to null!")
+                            }
+
+                        }
+                    }
+           
         }else{
             //ALERT
             print("ALERT")
@@ -38,7 +39,9 @@ class API {
     // MARK: LOAD ID FOR MOVIE - ONLY FIRST ID
     static func loadIDFormMovie(idMovie:Int ,completionHandler: MovieDetailListener){
         if let api_key = UserDefaults.standard.object(forKey: "api_key") as? String {
+            
             let urlCategoryFilter = URL(string: "https://api.themoviedb.org/3/movie/\(idMovie)/videos?api_key=\(api_key)")
+            
             Alamofire.request(urlCategoryFilter!, method: .get, parameters: nil, encoding: JSONEncoding.default)
                 .responseJSON { response in
                     if var trailers = response.result.value as? [String:AnyObject] {

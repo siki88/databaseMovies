@@ -13,11 +13,11 @@ import AlamofireImage
 class mainController: UIViewController,UITableViewDelegate,UITableViewDataSource,UISearchBarDelegate {
     
     var catalogueMovie = [CatalogueMovie]()
-    var searchMovie = [CatalogueMovie]()
     
     var page:Int = 1
     let api_key:String = "bae5ff7bac4feec8604266fabb028a17"
     var idMovie:Int?
+    var language:String = ""
     
     var fetchongMore = false  // load on down scroll
     
@@ -25,20 +25,33 @@ class mainController: UIViewController,UITableViewDelegate,UITableViewDataSource
     
     @IBOutlet weak var searchBar: UISearchBar!
     
-    
-    
-
     override func viewDidLoad() {
         super.viewDidLoad()
         
         // CONTROL CONNECT INTERNET
         if CheckInternet.Connection(){
             
+            if let selectLanguage = UserDefaults.standard.object(forKey: "selectLanguage") as? String,UserDefaults.standard.object(forKey: "selectLanguage") as? String != "", selectLanguage != "" {
+                self.language = selectLanguage
+            }else{
+                let alert = UIAlertController(title: "Zvolte jazyk", message: "Select language", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: NSLocalizedString("EN", comment: "Default action"), style: .`default`, handler: { _ in
+                    UserDefaults.standard.set("en", forKey: "selectLanguage")
+                    self.language = "en"
+                }))
+                alert.addAction(UIAlertAction(title: NSLocalizedString("CZ", comment: "Default action"), style: .`default`, handler: { _ in
+                    UserDefaults.standard.set("cs", forKey: "selectLanguage")
+                    self.language = "cs"
+                }))
+                self.present(alert, animated: true, completion: nil)
+            }
+            
             //load catalogs
-            let urlCategoryFilter = URL(string: "https://api.themoviedb.org/3/movie/popular?api_key=\(self.api_key)&page=\(self.page)")
+            let urlCategoryFilter = URL(string: "https://api.themoviedb.org/3/movie/popular?api_key=\(self.api_key)&page=\(self.page)&language=\(self.language)")
             requestOnAlamofire(urlCategoryFilter:urlCategoryFilter!)
             
             UserDefaults.standard.set(self.api_key, forKey: "api_key")
+        
         }else{
             alert(title:"Připojení k internetu není k dispozici.",message:"Zkuste to prosím později.")
             self.searchBar.isHidden = true
@@ -52,6 +65,9 @@ class mainController: UIViewController,UITableViewDelegate,UITableViewDataSource
     
     //MARK: REQUEST ALAMOFIRE
     func requestOnAlamofire(urlCategoryFilter:URL){
+        
+        print("URL před odesláním: \(urlCategoryFilter)")
+        
         Alamofire.request(urlCategoryFilter, method: .get, parameters: nil, encoding: JSONEncoding.default)
             .responseJSON { response in
                 if var catalogs = response.result.value as? [String:AnyObject]{
@@ -86,7 +102,12 @@ class mainController: UIViewController,UITableViewDelegate,UITableViewDataSource
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "mainTableCell", for: indexPath) as! mainTableViewCell
         
-        cell.movieTitle.text = self.catalogueMovie[indexPath.row].title
+        
+        if self.catalogueMovie[indexPath.row].title != "" {
+            cell.movieTitle.text = self.catalogueMovie[indexPath.row].title
+        }else{
+            cell.movieTitle.text = "N/A"
+        }
         
         // alamofire image
         if self.catalogueMovie[indexPath.row].image != "" {
@@ -129,10 +150,19 @@ class mainController: UIViewController,UITableViewDelegate,UITableViewDataSource
     }
     
     func beginBatchFetch(){
+        print("self.fetchongMore \(self.fetchongMore) AND self.page \(self.page )")
         self.fetchongMore = true
+        
+        var urlCategoryFilter:URL?
+        if let searchBarText = self.searchBar.text,self.searchBar.text != "", searchBarText != "" {
+            urlCategoryFilter = URL(string: "https://api.themoviedb.org/3/search/movie?api_key=\(self.api_key)&page=\(self.page)&language=\(self.language)&query=\(searchBarText)")
+        }else{
+            urlCategoryFilter = URL(string: "https://api.themoviedb.org/3/movie/popular?api_key=\(self.api_key)&page=\(self.page)&language=\(self.language)")
+        }
+
         self.page = self.page + 1
-        let urlCategoryFilter = URL(string: "https://api.themoviedb.org/3/movie/popular?api_key=\(self.api_key)&page=\(self.page)")
         requestOnAlamofire(urlCategoryFilter:urlCategoryFilter!)
+        
     }
     
     
@@ -149,36 +179,29 @@ class mainController: UIViewController,UITableViewDelegate,UITableViewDataSource
     
     //MARK: search function
     func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
+        self.page = 1
         searchBar.setShowsCancelButton(true, animated: true)
         return true
     }
     
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar){
-        self.searchBar.text = ""
-      //  catalogueMovie()
-        tableView.reloadData()
+        self.tableView.reloadData()
         self.searchBar.setShowsCancelButton(false, animated: true)
         self.searchBar.endEditing(true)
     }
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String){
         
-        if !self.searchBar.text!.isEmpty {
-            
-            searchMovie = catalogueMovie.filter { dict in
-                    return dict.title.lowercased().contains(searchText.lowercased())
-            }
-            
+        if let searchBarText =  self.searchBar.text,!self.searchBar.text!.isEmpty {
             self.catalogueMovie.removeAll()
-            self.catalogueMovie = self.searchMovie
-            self.searchMovie.removeAll()
-            self.tableView.reloadData()
-        }else{
-            self.catalogueMovie.removeAll()
-            self.searchMovie.removeAll()
-            let urlCategoryFilter = URL(string: "https://api.themoviedb.org/3/movie/popular?api_key=\(self.api_key)&page=\(self.page)")
+            let urlCategoryFilter = URL(string: "https://api.themoviedb.org/3/search/movie?api_key=\(self.api_key)&page=1&language=\(self.language)&query=\(searchBarText)")
+            self.page = 2
             requestOnAlamofire(urlCategoryFilter:urlCategoryFilter!)
-            self.tableView.reloadData()
+        }else{
+            print("!self.searchBar.text!.isEmpty else")
+            self.catalogueMovie.removeAll()
+            let urlCategoryFilter = URL(string: "https://api.themoviedb.org/3/movie/popular?api_key=\(self.api_key)&page=1&language=\(self.language)")
+            requestOnAlamofire(urlCategoryFilter:urlCategoryFilter!)
         }
     }
     
